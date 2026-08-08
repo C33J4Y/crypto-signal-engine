@@ -8,3 +8,6 @@ data/*.csv
 frontend/node_modules/
 frontend/dist/
 .claude/
+
+# macOS Finder metadata
+.DS_Store
