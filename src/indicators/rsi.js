@@ -167,8 +167,9 @@ function findClosestSwing(swings, targetIndex, maxDistance = 5) {
  * @param {Array} candles
  * @returns {{ value: number, condition: string, points: number, divergence: object }}
  */
-function analyze(candles) {
-  const { values, current } = calculateRSI(candles);
+function analyze(candles, overrides = {}) {
+  const period = overrides.rsiPeriod ?? config.scoring.rsiPeriod;
+  const { values, current } = calculateRSI(candles, period);
 
   if (current === null) {
     return {
@@ -179,26 +180,32 @@ function analyze(candles) {
     };
   }
 
+  const oversold = overrides.rsiOversold ?? config.scoring.rsiOversold;
+  const nearOversold = overrides.rsiNearOversold ?? config.scoring.rsiNearOversold;
+  const overbought = overrides.rsiOverbought ?? config.scoring.rsiOverbought;
+  const nearOverbought = overrides.rsiNearOverbought ?? config.scoring.rsiNearOverbought;
+
   // RSI state scoring (graduated)
   let condition = 'neutral';
   let points = 0;
 
-  if (current <= config.scoring.rsiOversold) {
+  if (current <= oversold) {
     condition = 'oversold';
     points = 1.5;
-  } else if (current <= config.scoring.rsiNearOversold) {
+  } else if (current <= nearOversold) {
     condition = 'near_oversold';
     points = 0.75;
-  } else if (current >= config.scoring.rsiOverbought) {
+  } else if (current >= overbought) {
     condition = 'overbought';
     points = 1.5;
-  } else if (current >= config.scoring.rsiNearOverbought) {
+  } else if (current >= nearOverbought) {
     condition = 'near_overbought';
     points = 0.75;
   }
 
   // Divergence detection
-  const divergence = detectDivergence(candles, values);
+  const lookback = overrides.rsiDivergenceLookback ?? config.scoring.rsiDivergenceLookback;
+  const divergence = detectDivergence(candles, values, lookback);
   const divPoints = divergence.detected ? 2.0 : 0;
 
   return {

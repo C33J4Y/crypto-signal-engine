@@ -114,12 +114,13 @@ function backtestFvg(candles, activeFvgs, currentCandle) {
 
 // ─── Compute indicators for a candle window ───────────────────────
 
-function computeIndicators(window, activeFvgs, currentCandle) {
+function computeIndicators(window, activeFvgs, currentCandle, indicatorOverrides = {}) {
+  const io = indicatorOverrides;
   return {
-    rsi: rsi.analyze(window),
-    volumeProfile: volumeProfile.analyze(window),
-    volume: volume.analyze(window),
-    smaRibbon: smaRibbon.analyze(window),
+    rsi: rsi.analyze(window, io),
+    volumeProfile: volumeProfile.analyze(window, io.volumeProfileLookback, io.volumeProfileBins),
+    volume: volume.analyze(window, io.volumeAvgPeriod, io.volumeSpikeMultiplier),
+    smaRibbon: smaRibbon.analyze(window, io.smaFast, io.smaSlow),
     fvg: backtestFvg(window, activeFvgs, currentCandle),
   };
 }
@@ -148,7 +149,7 @@ function backtestSymbol(symbol, interval, strategy, mergedOpts, csvCandles, regi
     const window = allCandles.slice(Math.max(0, i - 499), i + 1);
     const currentCandle = window[window.length - 1];
 
-    const indicators = computeIndicators(window, activeFvgs, currentCandle);
+    const indicators = computeIndicators(window, activeFvgs, currentCandle, mergedOpts.indicatorOverrides || {});
 
     let currentRegime = null;
     if (regimeLookup) {
